@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intramuros Quest</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    
+     
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: white;
+            margin-top: 0;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 70px;
+            
+            background:#E5E5CB;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+           
+            
+            z-index: 9999
+            
+           
+        }
+
+        .navigation ul {
+            display: flex;
+            width: 350px;
+        }
+
+        .navigation ul li {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            list-style: none;
+            z-index: 1;
+        }
+
+        .navigation ul li a {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .navigation ul li a .icon {
+            position: relative;
+            display: block;
+            line-height: 75px;
+            font-size: 1.5em;
+            text-align: center;
+            color: black;
+            transition: .5s;
+        }
+
+        .navigation ul li.active a .icon {
+            transform: translateY(-32px);
+        }
+
+        .navigation ul li a .text {
+            position: absolute;
+            color: black;
+            font-weight: 400;
+            font-size: .75em;
+            letter-spacing: .05em;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: .5s;
+        }
+
+        .navigation ul li.active a .text {
+            opacity: 1;
+            transform: translateY(10px);
+        }
+
+        .navigation ul li a .circle {
+            position: absolute;
+            display: block;
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            border-radius: 50%;
+            border: 2px solid black;
+            transform: translateY(-37px) scale(0);
+        }
+
+        .navigation ul li.active a .circle {
+            transition: .5s;
+            transition-delay: .5s;
+            transform: translateY(-37px) scale(1);
+        }
+
+        .indicator {
+            position: absolute;
+            top: -50%;
+            width: 70px;
+            height: 70px;
+            
+            background:white;
+            
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: .5s;
+        }
+
+        .indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -22px;
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border-top-right-radius: 20px;
+           
+        }
+
+        .indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -22px;
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border-top-left-radius: 20px;
+            
+        }
+
+        .navigation ul li:nth-child(1).active~.indicator {
+            transform: translateX(calc(70px * 0));
+        }
+
+        .navigation ul li:nth-child(2).active~.indicator {
+            transform: translateX(calc(70px * 1));
+        }
+
+        .navigation ul li:nth-child(3).active~.indicator {
+            transform: translateX(calc(70px * 2));
+        }
+
+        .navigation ul li:nth-child(4).active~.indicator {
+            transform: translateX(calc(70px * 3));
+        }
+
+        .navigation ul li:nth-child(5).active~.indicator {
+            transform: translateX(calc(70px * 4));
+        }
+
+        .section {
+            display: none;
+            color: black;
+            font-size: 24px;
+            text-align: center;
+            margin-top:0;
+            padding-top:0;
+        }
+
+        .section.active {
+            display: block;
+            
+        }
+        #searchInput {
+    width: 300px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+
+  #searchInput:focus {
+    outline: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+ .custom-iframe {
+  border: 2px solid #E5E5CB;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  margin-top:0;
+  padding-top:0;
+  position: relative;
+  
+ 
+}
+
+
+        
+    </style>
+
+</head>
+
+<body>
+
+    <div class="navigation">
+        <ul>
+            <li class="list active">
+                <a href="#" onclick="showSection(0)">
+                    <span class="icon">
+                        <ion-icon name="home-outline"></ion-icon>
+                    </span>
+                    <span class="text">Home</span>
+                    <span class="circle"></span>
+                </a>
+            </li>
+            <li class="list">
+                <a href="#" onclick="showSection(1)">
+                    <span class="icon">
+                        <ion-icon name="map-outline"></ion-icon>
+                    </span>
+                    <span class="text">Map</span>
+                    <span class="circle"></span>
+                </a>
+            </li>
+            <li class="list">
+                <a href="#" onclick="showSection(2)">
+                    <span class="icon">
+                        <ion-icon name="phone-portrait-outline"></ion-icon>
+                    </span>
+                    <span class="text">AR</span>
+                    <span class="circle"></span>
+                </a>
+            </li>
+            <li class="list">
+                <a href="#" onclick="showSection(3)">
+                    <span class="icon">
+                        <ion-icon name="play-outline"></ion-icon>
+                    </span>
+                    <span class="text">Watch</span>
+                    <span class="circle"></span>
+                </a>
+            </li>
+            <li class="list">
+                <a href="#" onclick="showSection(4)">
+                    <span class="icon">
+                       <ion-icon name="information-circle-outline" size="medium"></ion-icon>
+                    </span>
+                    <span class="text">About</span>
+                    <span class="circle"></span>
+                </a>
+            </li>
+            <div class="indicator"></div>
+        </ul>
+    </div>
+
+<div class="section active" id="section-home">
+    <h2>Intramuros Quest</h2>
+    <input type="text" id="searchInput" placeholder="Search" oninput="search()">
+    <br><br>
+      <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <img src="fort_santiago.jpg" width="350px" style="border-radius:15px; padding: 5px" data-title="forth santiago">
+         <p><a href="#" onclick="toggleInfo(event, 1)" style="color:black"><ion-icon name="book-sharp" size="large"></ion-icon></a></p>
+      <div id="moreInfo1" style="display: none;">
+         <div style="padding: 20px; background-color: #F3EFE0; border-radius: 10px">
+           <h4>Fort Santiago</h4>
+           <p style="font-size: 16px; color: #666; text-align: justify;">
+             Fort Santiago is a historic citadel situated within the Intramuros district of Manila, Philippines. With a history spanning over 400 years, it has served various purposes, including a defense fortress, a military prison, and now a significant cultural and historical landmark. Built by Spanish conquistadors in the late 16th century, Fort Santiago was strategically positioned at the mouth of the Pasig River to protect the city from maritime attacks. Throughout its existence, it has witnessed many important events in Philippine history. One of its most notable prisoners was Dr. José Rizal, the national hero of the Philippines, who was held there prior to his execution in 1896. Today, Fort Santiago stands as a well-preserved monument, showcasing its Spanish colonial architecture, lush gardens, and a museum that displays artifacts and exhibits recounting the country's past. A visit to Fort Santiago offers a captivating journey into the country's history, allowing visitors to explore its walls, dungeons, and iconic landmarks while immersing themselves in the rich cultural heritage of the Philippines.
+          </p>
+          <iframe src="https://visitfortsantiago.com/" style="width: 100%; height: 500px; border: none;"></iframe>
+
+          
+       </div>
+     </div>
+  </div>
+  <br>
+     <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <img src="casa_manila.jpg" width="350px" style="border-radius:15px; padding: 5px" data-title="casa manila">
+         <p><a href="#" onclick="toggleInfo(event, 2)" style="color:black"><ion-icon name="book-sharp" size="large"></ion-icon></a></p>
+      <div id="moreInfo2" style="display: none;">
+        <div style="padding: 20px; background-color: #F3EFE0; border-radius: 10px">
+           <h4>Casa Manila</h4>
+           <p style="font-size: 16px; color: #666; text-align: justify;">
+             Casa Manila is a meticulously recreated colonial-era house located within the historic district of Intramuros in Manila, Philippines. It is a museum that showcases the lifestyle, architecture, and furnishings of an affluent Filipino family during the Spanish colonial period. Designed to resemble a typical 19th-century Filipino "bahay na bato" (stone house), Casa Manila provides visitors with a glimpse into the opulence and grandeur of the Spanish colonial era. The museum exhibits an extensive collection of antique furniture, artwork, household items, and artifacts that reflect the cultural and social aspects of that time. Exploring Casa Manila offers a unique opportunity to immerse oneself in the rich history and cultural heritage of the Philippines during the Spanish colonial period.
+          </p>
+          <iframe src="https://www.beautyofthephilippines.com/casa-manila/" style="width: 100%; height: 500px; border: none;"></iframe>
+       </div>
+      </div>
+    </div>
+  <br>
+    <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <img src="baluarte.jpg" width="350px" style="border-radius:15px; padding: 5px" data-title="Baluarte de San Diego">
+         <p><a href="#" onclick="toggleInfo(event, 3)" style="color:black"><ion-icon name="book-sharp" size="large"></ion-icon></a></p>
+      <div id="moreInfo3" style="display: none;">
+        <div style="padding: 20px; background-color: #F3EFE0; border-radius: 10px">
+           <h4>Baluarte De San Diego</h4>
+           <p style="font-size: 16px; color: #666; text-align: justify;">
+             Baluarte de San Diego is a historical fortification located within the walls of Intramuros, Manila, Philippines. It is one of the oldest stone fortifications in the area, dating back to the late 16th century. Originally built by Spanish colonial authorities to protect the city from invasions, Baluarte de San Diego has played a significant role in Manila's defense throughout its history. The fortification showcases a combination of Spanish and Filipino architectural influences, with its sturdy walls, watchtowers, and cannons. Today, Baluarte de San Diego has been restored and transformed into a park and garden, providing visitors with a peaceful oasis within the bustling city. Exploring the Baluarte de San Diego allows visitors to step back in time, appreciate its historical significance, and enjoy the serene surroundings it offers.
+          </p>
+          <iframe src="https://www.nomadicexperiences.com/2021/07/visiting-baluarte-de-san-diego-in.html" style="width: 100%; height: 500px; border: none;"></iframe>
+       </div>
+      </div>
+    </div>
+   <br>
+    <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <img src="manila_cathedral.jpg" width="350px" style="border-radius:15px; padding: 5px" data-title="manila cathedral">
+         <p><a href="#" onclick="toggleInfo(event, 4)" style="color:black"><ion-icon name="book-sharp" size="large"></ion-icon></a></p>
+      <div id="moreInfo4" style="display: none;">
+         <div style="padding: 20px; background-color: #F3EFE0; border-radius: 10px">
+           <h4>Manila Cathedral</h4>
+           <p style="font-size: 16px; color: #666; text-align: justify;">
+             The Manila Cathedral, located in the heart of Intramuros, Manila, is a significant Roman Catholic cathedral known for its rich history, stunning architecture, and religious importance. Serving as the mother church of the Philippines, it has undergone several reconstructions and renovations over the years. The current Neo-Romanesque structure, consecrated in 1958, features a grand façade, intricate details, and beautiful stained glass windows. The Manila Cathedral holds a central role in the religious life of the country, hosting important ceremonies and events. Its enduring presence and cultural significance make it a must-visit destination for those seeking to explore the historical and spiritual heritage of the Philippines.
+          </p>
+          
+          <iframe src="https://www.manilacathedral.com.ph/eight.aspx" style="width: 100%; height: 500px; border: none;"></iframe>
+       </div>
+      </div>
+    </div> 
+    <br>
+    <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <img src="bahay_tsinoy.jpg" width="350px" style="border-radius:15px; padding: 5px" data-title="bahay tsinoy">
+         <p><a href="#" onclick="toggleInfo(event, 5)" style="color:black"><ion-icon name="book-sharp" size="large"></ion-icon></a></p>
+      <div id="moreInfo5" style="display: none;">
+        <div style="padding: 20px; background-color: #F3EFE0; border-radius: 10px">
+           <h4>Bahay Tsinoy</h4>
+           <p style="font-size: 16px; color: #666; text-align: justify;">
+             Bahay Tsinoy, located in Intramuros, Manila, is a museum dedicated to the rich history, culture, and contributions of the Chinese community in the Philippines. The name "Bahay Tsinoy" translates to "Chinese House" in English. It serves as a bridge between the Filipino and Chinese cultures, showcasing the shared heritage and historical connections between the two nations. The museum exhibits a diverse range of artifacts, documents, photographs, and interactive displays that highlight the significant role of the Chinese in shaping Philippine history and society. Visitors can explore various aspects of Chinese-Filipino life, including traditions, customs, commerce, and migration stories. Bahay Tsinoy provides a valuable educational experience, fostering cultural understanding and appreciation for the Chinese influence on Filipino culture and identity.
+          </p>
+           <iframe src="https://www.thegomom.com/family-travel-and-eats/bahay-tsinoy-impressive-life-sized-museum" style="width: 100%; height: 500px; border: none;"></iframe>
+          
+       </div>
+      </div>
+    </div>
+  <br>
+  <br>
+  <br>
+  
+</div>
+
+    <div class="section" id="section-map">
+        <!-- <h2>Map</h2>-->
+         <iframe src="mapx.html" width="400px" height="550px" class="custom-iframe" style="margin-top:0" ></iframe>
+         <br>
+         <br>
+         <br>
+         <br>
+         
+         
+       
+    </div>
+
+    <div class="section" id="section-ar" style="padding: 20px">
+        <!--<h2>AR Section</h2>-->
+        <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Baluarte De San Diego</p>
+         <img src="baluarte_ar.jpeg" width="350px" style="border-radius:15px; padding: 5px">
+         <br>
+         <a href="https://ar.blippar.com/7grucee5tjivjl0txmygzaq6vsy9qlu6jpapuiy4" style="background-color:#526D82; padding:5px; color: white; text-decoration:none; border-radius:5px">View AR</a>
+        </div>
+        <br>
+         <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Fort Santiago</p>
+         <img src="fort_santiago3.jpg" width="350px" style="border-radius:15px; padding: 5px">
+         <br>
+         <a href="https://ar.blippar.com/xxqzj9hfnt2systrvp7c59jerv3j7uybzr9hzxeo" style="background-color:#526D82; padding:5px; color: white; text-decoration:none; border-radius:5px">View AR</a>
+        </div>
+        <br>
+         <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Casa Manila</p>
+         <img src="casa_ar.jpeg" width="350px" style="border-radius:15px; padding: 5px">
+         <br>
+         <a href="https://ar.blippar.com/li71ur9ruj1slqsg21jlfln7is8bxiu3htdjvpp4" style="background-color:#526D82; padding:5px; color: white; text-decoration:none; border-radius:5px">View AR</a>
+        </div>
+        <br>
+         <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Manila Cathedral</p>
+         <img src="cathedral2.jpg" width="350px" height="240px" style="border-radius:15px; padding: 5px">
+         <br>
+         <a href="https://ar.blippar.com/z1d1fc6fzakndt9t5dn9g7dyl0tnbm0xutlw3m7q" style="background-color:#526D82; padding:5px; color: white; text-decoration:none; border-radius:5px">View AR</a>
+        </div>
+        <br>
+         <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Bahay Tsinoy</p>
+         <img src="bahay_tsinoy_ar.jpg" width="350px" style="border-radius:15px; padding: 5px">
+         <br>
+         <a href="maintenance.html" style="background-color:#526D82; padding:5px; color: white; text-decoration:none; border-radius:5px">View AR</a>
+        </div>
+        <br>
+        <br>
+    </div>
+   <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <script>
+        const places = [
+            { name: 'Baluarte De San Diego', lat: 14.58551502766628, lng: 120.9755561927982, radius: 1000 }, // Radius in meters
+            { name: 'Fort Santiago', lat: 14.594248202050217, lng: 120.97041334377273, radius: 1000 },
+            { name: 'Casa Manila', lat: 14.58941369814953, lng: 120.9752236141006, radius: 1000 },
+            { name: 'Manila Cathedral', lat: 14.591869440279611, lng: 120.97328639550297, radius: 1000 },
+            { name: 'Bahay Tsinoy', lat: 14.590947215063967, lng: 120.97503249564761, radius: 1000 }
+        ];
+        
+        const map = L.map('map').setView([14.5885, 120.9798], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+            maxZoom: 18,
+        }).addTo(map);
+
+        places.forEach(place => {
+            const marker = L.marker([place.lat, place.lng]).addTo(map);
+            marker.bindPopup(place.name);
+        });
+
+        const viewARLinks = document.querySelectorAll('#section-ar a');
+        viewARLinks.forEach(link => {
+            link.addEventListener('click', handleViewARClick);
+        });
+
+        function handleViewARClick(event) {
+            event.preventDefault();
+
+            const placeName = event.target.parentNode.querySelector('p').textContent;
+
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const currentLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    const place = places.find(place => place.name === placeName);
+                    if (place) {
+                        const distance = calculateDistance(place.lat, place.lng, currentLocation.lat, currentLocation.lng);
+                        if (distance > place.radius) {
+                            alert("You are not in the place location to view the AR\nPlease see the location on the map");
+
+                            return;
+                        }
+                    }
+
+                    const arLink = event.target.href;
+                    window.open(arLink);
+                },
+                () => {
+                    alert('Unable to retrieve your location');
+                }
+            );
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c * 1000; // Distance in meters
+            return distance;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+    </script>
+    <div class="section" id="section-watch" style="padding:20px">
+        <h3>Watch Section</h3>
+        <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Welcoming You Beyond The Wall</p>
+         <br>
+         <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"width="350" height="240" type="text/html" src="https://www.youtube.com/embed/Db19KNNSWa0?autoplay=0&fs=0&iv_load_policy=3&showinfo=0&rel=0&cc_load_policy=0&start=0&end=0&origin=http://youtubeembedcode.com"><div><small><a href="https://youtubeembedcode.com/en">youtubeembedcode en</a></small></div><div><small><a href="https://xn--sms-ln-direkt-utbetalning-gfc.se/">smslån direkt utbetalning</a></small></div></iframe>
+        </div>
+        <br>
+        <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>Beyond Exploring</p>
+         <br>
+         <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"width="350" height="240" type="text/html" src="https://www.youtube.com/embed/zSP7m56W_5U?autoplay=0&fs=0&iv_load_policy=3&showinfo=0&rel=0&cc_load_policy=0&start=0&end=0&origin=http://youtubeembedcode.com"><div><small><a href="https://youtubeembedcode.com/de/">youtubeembedcode.com/de/</a></small></div><div><small><a href="https://xn--snabbln5000-28a.com/lana-10000-kr/">låna 10000 snabbt</a></small></div></iframe>
+         
+        </div>
+        <br>
+        <div style="background-color:#F9F5F6; padding: 20px; border-radius: 10px">
+         <p>A Cinematic Tour</p>
+         <br>
+         <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"width="350" height="240" type="text/html" src="https://www.youtube.com/embed/pUFirwt1Gfs?autoplay=0&fs=0&iv_load_policy=3&showinfo=0&rel=0&cc_load_policy=0&start=0&end=0&origin=http://youtubeembedcode.com"><div><small><a href="https://youtubeembedcode.com/pl/">youtubeembedcode pl</a></small></div><div><small><a href="https://unoregler.com/">regler uno</a></small></div></iframe>
+        </div>
+        <br>
+        <br>
+    </div>
+
+<div class="section" id="section-about" style="padding: 20px;">
+    <h3>About</h3>
+    <div style="padding: 20px; background-color: #f2f2f2; border-radius: 10px">
+    <p style="font-size: 16px; color: #666; text-align: justify;">
+     Welcome to Intramuros Quest! This web application is designed to provide information and an interactive experience of the historic Intramuros district in Manila, Philippines.
+
+    Intramuros, meaning "within the walls" in Latin, is the oldest district and historic core of Manila. It was built by the Spanish colonial government in the late 16th century and served as the seat of political, religious, and military power during the Spanish colonial period.
+
+    Explore the rich cultural heritage of Intramuros through our curated collection of landmarks, including Fort Santiago, Casa Manila, Baluarte de San Diego, Manila Cathedral, and Bahay Tsinoy. These architectural gems showcase the fusion of Spanish, Chinese, and Filipino influences, offering a glimpse into the country's colonial past.
+
+    Whether you're a history enthusiast, a student, or a tourist looking for a memorable experience, Intramuros Quest is your guide to discovering the beauty and significance of this historic walled city. Learn about the events that shaped its history, walk along cobblestone streets, visit museums, and immerse yourself in the charm of this cultural treasure.
+
+    Enjoy your journey and have a great time exploring Intramuros!
+    </p>
+    </div>
+    <br>
+    <br>
+    <br>
+</div>
+     
+    <script type="module"
+        src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule
+        src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    
+    <script>
+        const list = document.querySelectorAll('.list');
+        const sections = document.querySelectorAll('.section');
+
+        function showSection(index) {
+            sections.forEach((section) => {
+                section.classList.remove('active');
+            });
+            sections[index].classList.add('active');
+        }
+
+        function activeLink() {
+            list.forEach((item) =>
+                item.classList.remove('active'));
+            this.classList.add('active');
+        }
+
+        list.forEach((item) =>
+            item.addEventListener('click', activeLink));
+    </script>
+    <script>
+   function toggleInfo(event, imageNumber) {
+      event.preventDefault();
+      var info = document.getElementById("moreInfo" + imageNumber);
+      info.style.display = info.style.display === "none" ? "block" : "none";
+    }
+
+    function filterImages() {
+      var input = document.getElementById("searchInput").value.toLowerCase();
+      var images = document.querySelectorAll('img[data-title]');
+
+      for (var i = 0; i < images.length; i++) {
+        var title = images[i].getAttribute("data-title").toLowerCase();
+        var parentDiv = images[i].parentNode;
+
+        if (input.length === 0 || title.includes(input)) {
+          parentDiv.style.display = "block";
+        } else {
+          parentDiv.style.display = "none";
+        }
+      }
+    }
+    </script>
+    <script>
+ function search() {
+  var input = document.getElementById("searchInput").value.toLowerCase();
+  var images = document.querySelectorAll("#section-home img");
+  
+  for (var i = 0; i < images.length; i++) {
+    var title = images[i].getAttribute("data-title").toLowerCase();
+    if (title.includes(input)) {
+      images[i].parentNode.style.display = "block";
+    } else {
+      images[i].parentNode.style.display = "none";
+    }
+  }
+}
+</script>
+</body>
+
+<script>
+      window.onload = () => {
+      let bannerNode = document.querySelector('[alt="www.000webhost.com"]').parentNode.parentNode;
+      bannerNode.parentNode.removeChild(bannerNode);
+   }
+</script>
+
+
+ 
+
+</html>
+
